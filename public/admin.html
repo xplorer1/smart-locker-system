@@ -633,7 +633,7 @@
             // Main Application JavaScript
             document.addEventListener('DOMContentLoaded', function() {
                 // API Base URL - Change this to your actual backend URL
-                let API_BASE_URL = 'http://localhost:8070/api';
+                let API_BASE_URL = process.env.API_BASE_URL;
 
                 // Authentication token
                 let authToken = localStorage.getItem('authToken');
