@@ -6,6 +6,8 @@ let logger = require('morgan');
 let cors = require('cors');
 let general_config = require("./src/config/general_config");
 
+let fs = require('fs');
+
 let app = express();
 
 app.use(cors());
@@ -41,11 +43,35 @@ let index = require('./src/routes/index');
 app.use('/api', index);
 
 app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+    //res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+
+    let file_path = path.join(__dirname, 'public', 'admin.html');
+    fs.readFile(file_path, 'utf8', (err, html) => {
+        if (err) return res.status(500).send('Error loading page');
+        // replace the placeholder with the real env-var
+
+        let out = html.replace(
+            /__API_BASE_URL__/g,
+            process.env.API_BASE_URL
+        );
+        res.type('html').send(out);
+    });
 });
 
 app.get('/user', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'user.html'));
+    //res.sendFile(path.join(__dirname, 'public', 'user.html'));
+
+    let file_path = path.join(__dirname, 'public', 'user.html');
+    fs.readFile(file_path, 'utf8', (err, html) => {
+        if (err) return res.status(500).send('Error loading page');
+        // replace the placeholder with the real env-var
+
+        let out = html.replace(
+            /__API_BASE_URL__/g,
+            process.env.API_BASE_URL
+        );
+        res.type('html').send(out);
+    });
 });
 
 // catch 404 and forward to error handler

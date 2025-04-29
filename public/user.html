@@ -52,6 +52,7 @@
                 cursor: pointer;
             }
         </style>
+
     </head>
     <body>
         <!-- Login Screen -->
@@ -178,8 +179,7 @@
     <script>
         // Main Application JavaScript
         document.addEventListener('DOMContentLoaded', function() {
-            // API Base URL - Change this to your actual backend URL
-            let API_BASE_URL = process.env.API_BASE_URL;
+            let API_BASE_URL = '__API_BASE_URL__';
 
             // Authentication token
             let authToken = localStorage.getItem('userAuthToken');
