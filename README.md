@@ -1,6 +1,6 @@
 # SecureBox Backend
 
-Node.js/Express backend for managing locker assignments and authenticating student access for the SmartLock Pro system.
+Node.js/Express backend for managing locker assignments and authenticating user access for the SmartLock Pro system.
 
 ## Setup
 1. Install Node.js (v16+).
@@ -11,16 +11,16 @@ Node.js/Express backend for managing locker assignments and authenticating stude
 ## API Endpoints
 ### Admin Routes (Requires JWT)
 - POST /api/admin/login: Admin login to get JWT.
-- POST /api/admin/assign: Assign a locker to a student.
+- POST /api/admin/assign: Assign a locker to a user.
 - POST /api/admin/reclaim: Reclaim a locker.
 - GET /api/admin/lockers: List all lockers.
-- GET /api/admin/students: List all students.
+- GET /api/admin/user: List all users.
 
 ### Authentication Routes
-- POST /api/auth/verify: Verify student credentials from microcontroller.
+- POST /api/auth/verify: Verify user credentials from microcontroller.
 
 ## Microcontroller Integration
-- Send HTTP POST requests to /api/auth/verify with JSON body: { "studentId": "S001", "pin": "1234", "lockerId": 1 }.
+- Send HTTP POST requests to /api/auth/verify with JSON body: { "userId": "S001", "pin": "1234", "lockerId": 1 }.
 - Use HTTPS in production for security.
 
 ## Notes

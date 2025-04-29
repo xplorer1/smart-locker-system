@@ -1,4 +1,5 @@
 let jwt = require('jsonwebtoken');
+let general_config = require("../config/general_config");
 
 let validateJWT = (req, res, next) => {
     let authHeader = req.headers['authorization'];
@@ -9,7 +10,7 @@ let validateJWT = (req, res, next) => {
     let token = authHeader.split(' ')[1];
 
     try {
-        jwt.verify(token, 'your_jwt_secret_key', (err, user) => {
+        jwt.verify(token, general_config.secret_key, (err, user) => {
             if (err) return res.status(403).json({ error: 'Invalid token' });
             req.user = user;
             next();
@@ -20,4 +21,21 @@ let validateJWT = (req, res, next) => {
     }
 };
 
-module.exports = {validateJWT};
+// Admin-only authentication middleware
+let verifyAdminAccess = (req, res, next) => {
+    // Check if user exists and role is not defined (admin tokens) or is explicitly admin
+    if (!req.user || (req.user.role && req.user.role !== 'admin')) {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
+    next();
+};
+
+// Student-only authentication middleware
+let verifyUserAccess = (req, res, next) => {
+    if (!req.user || req.user.role !== 'user') {
+        return res.status(403).json({ error: 'User access required' });
+    }
+    next();
+};
+
+module.exports = {validateJWT, verifyAdminAccess, verifyUserAccess};

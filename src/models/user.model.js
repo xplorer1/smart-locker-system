@@ -2,7 +2,7 @@
 let bcrypt = require('bcrypt');
 
 module.exports = (sequelize, DataTypes) => {
-    let Student = sequelize.define('Student', {
+    let User = sequelize.define('User', {
 
         id: {
             type: DataTypes.INTEGER,
@@ -15,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
         },
 
-        student_id: {
+        user_id: {
             type: DataTypes.STRING,
             allowNull: false,
         },
@@ -38,34 +38,34 @@ module.exports = (sequelize, DataTypes) => {
         },
 
     }, {
-        tableName: 'student',
+        tableName: 'user',
         timestamps: true,
 
         // 1) Define hooks for hashing
         hooks: {
             // beforeCreate → runs on INSERT
-            beforeCreate: async (student, options) => {
-                if (student.pin_code) {
+            beforeCreate: async (user, options) => {
+                if (user.pin_code) {
                     let salt  = await bcrypt.genSalt(10);
-                    student.pin_code = await bcrypt.hash(student.pin_code, salt);
+                    user.pin_code = await bcrypt.hash(user.pin_code, salt);
                 }
             },
 
             // beforeUpdate → runs on UPDATE
-            beforeUpdate: async (student, options) => {
+            beforeUpdate: async (user, options) => {
                 // only re-hash if the pin_code field was changed
-                if (student.changed('pin_code')) {
+                if (user.changed('pin_code')) {
                     let salt  = await bcrypt.genSalt(10);
-                    student.pin_code = await bcrypt.hash(student.pin_code, salt);
+                    user.pin_code = await bcrypt.hash(user.pin_code, salt);
                 }
             },
         }
     });
 
     // 2) Instance method to compare a plaintext pin_code
-    Student.prototype.validPinCode = async function (plaintext) {
+    User.prototype.validPinCode = async function (plaintext) {
         return bcrypt.compare(plaintext, this.pin_code);
     };
 
-    return Student
+    return User
 };

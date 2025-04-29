@@ -5,6 +5,7 @@ let logger = require("../utils/logger");
 
 let auth_routes = require("./auth.route");
 let admin_routes = require("./admin.route");
+let user_routes = require("./user.route");
 
 router.use(function (req, res, next) {
     logger.info(`${dayjs()}: ${req.originalUrl}`);
@@ -18,5 +19,6 @@ router.get("/status", function (req, res) {
 
 router.use("/auth", auth_routes);
 router.use("/admin", admin_routes);
+router.use("/user", user_routes);
 
 module.exports = router;

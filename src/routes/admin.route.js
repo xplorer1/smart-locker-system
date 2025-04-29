@@ -6,12 +6,12 @@ let admin_validator = require("../validators/admin.joi");
 
 let authentication = require('../middlewares/authentication');
 
-router.post('/admin/users', admin_validator.addAdmin, admin_controller.createAdmin);
-router.get('/admin/users', authentication.validateJWT, admin_controller.getAllAdmins);
-router.patch('/admin/change-password', authentication.validateJWT, admin_controller.changePassword);
+router.post('/', admin_validator.addAdmin, admin_controller.createAdmin);
+router.get('/', authentication.validateJWT, admin_controller.getAllAdmins);
+router.patch('/change-password', authentication.validateJWT, admin_controller.changePassword);
 
-router.get('/students', authentication.validateJWT, admin_controller.getStudents);
-router.post('/students', admin_validator.addStudent, authentication.validateJWT, admin_controller.addStudent);
+router.get('/users', authentication.validateJWT, admin_controller.getUsers);
+router.post('/users', admin_validator.addUser, authentication.validateJWT, admin_controller.addUser);
 
 router.get('/lockers', authentication.validateJWT, admin_controller.getActiveLockers);
 router.post('/lockers', authentication.validateJWT, admin_controller.addLocker);

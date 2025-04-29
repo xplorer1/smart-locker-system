@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>SecureBox User Portal</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+        <style>
+            body {
+                background-color: #f8f9fa;
+            }
+            .navbar-brand {
+                font-weight: bold;
+            }
+            .card {
+                box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+                margin-bottom: 1.5rem;
+            }
+            .login-container {
+                max-width: 400px;
+                margin: 10% auto;
+            }
+            .hidden {
+                display: none;
+            }
+            #logoutBtn {
+                cursor: pointer;
+            }
+            .locker-card {
+                border-radius: 15px;
+                overflow: hidden;
+            }
+            .locker-header {
+                background-color: #4472c4;
+                color: white;
+                padding: 20px;
+                text-align: center;
+            }
+            .locker-icon {
+                font-size: 48px;
+                margin-bottom: 10px;
+            }
+            .activity-timestamp {
+                font-size: 0.8rem;
+                color: #666;
+            }
+            .action-icon {
+                margin-right: 8px;
+            }
+            .nav-link {
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Login Screen -->
+        <div id="loginScreen" class="container login-container">
+            <div class="card">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4>SecureBox User Portal</h4>
+                </div>
+                <div class="card-body">
+                    <form id="loginForm">
+                        <div class="alert alert-danger hidden" id="loginError"></div>
+                        <div class="mb-3">
+                            <label for="userId" class="form-label">User ID</label>
+                            <input type="text" class="form-control" id="userId" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="pinCode" class="form-label">PIN Code</label>
+                            <input type="password" class="form-control" id="pinCode" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Login</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard -->
+        <div id="appContainer" class="hidden">
+            <!-- Navigation -->
+            <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+                <div class="container">
+                    <a class="navbar-brand" href="#">
+                        <i class="bi bi-lock"></i> SecureBox User Portal
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav ms-auto">
+                            <li class="nav-item">
+                                <span class="nav-link" id="userNameDisplay">Welcome!</span>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="logoutBtn"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container mt-4">
+                <div id="noLockerMessage" class="hidden">
+                    <div class="alert alert-info">
+                        <h4><i class="bi bi-info-circle"></i> No Locker Assigned</h4>
+                        <p>You don't have a locker assigned to you at the moment. Please contact the administration office to request a locker.</p>
+                    </div>
+                </div>
+
+                <div id="lockerInfo" class="hidden">
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card locker-card">
+                                <div class="locker-header">
+                                    <div class="locker-icon">
+                                        <i class="bi bi-lock"></i>
+                                    </div>
+                                    <h3 id="lockerNumber">Block A - Locker #12</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col">
+                                            <p><strong>Assigned:</strong> <span id="assignedDate">January 15, 2023</span></p>
+                                            <p><strong>Expires:</strong> <span id="expiryDate">December 31, 2023</span></p>
+                                        </div>
+                                    </div>
+                                    <div class="d-grid">
+                                        <button class="btn btn-lg btn-success" id="unlockButton">
+                                            <i class="bi bi-unlock"></i> Unlock Locker
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h5><i class="bi bi-clock-history"></i> Recent Activity</h5>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group" id="activityList">
+                                        <!-- Activity logs will be populated here -->
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Unlock Success Modal -->
+        <div class="modal fade" id="unlockSuccessModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-unlock"></i> Locker Unlocked</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="bi bi-unlock-fill text-success" style="font-size: 48px;"></i>
+                <h4 class="mt-3">Your locker has been unlocked!</h4>
+                <p>Please proceed to your locker to access your belongings.</p>
+                <p><strong>Locker: </strong><span id="unlockedLockerInfo">Block A - #12</span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- JavaScript Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Main Application JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            // API Base URL - Change this to your actual backend URL
+            let API_BASE_URL = 'http://localhost:8070/api';
+
+            // Authentication token
+            let authToken = localStorage.getItem('userAuthToken');
+            let currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+
+            // Authentication check
+            function checkAuth() {
+                if (authToken && currentUser.id) {
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('appContainer').classList.remove('hidden');
+
+                    // Update user name in navbar
+                    document.getElementById('userNameDisplay').textContent =
+                        `Welcome, ${currentUser.full_name || currentUser.user_id}!`;
+
+                    // Load user locker info
+                    loadLockerInfo();
+                } else {
+                    document.getElementById('loginScreen').classList.remove('hidden');
+                    document.getElementById('appContainer').classList.add('hidden');
+                }
+            }
+
+            // Initial auth check
+            checkAuth();
+
+            // Login form submission
+            document.getElementById('loginForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                let user_id = document.getElementById('userId').value;
+                let pin_code = document.getElementById('pinCode').value;
+
+                fetch(`${API_BASE_URL}/auth/user-sign-in`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ user_id, pin_code })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            let errorEl = document.getElementById('loginError');
+                            errorEl.textContent = data.error;
+                            errorEl.classList.remove('hidden');
+                        } else {
+                            localStorage.setItem('userAuthToken', data.token);
+                            localStorage.setItem('currentUser', JSON.stringify(data.user));
+                            authToken = data.token;
+                            currentUser = data.user;
+                            checkAuth();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Login error:', error);
+                        document.getElementById('loginError').textContent = 'An error occurred. Please try again.';
+                        document.getElementById('loginError').classList.remove('hidden');
+                    });
+            });
+
+            // Logout handler
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                localStorage.removeItem('userAuthToken');
+                localStorage.removeItem('currentUser');
+                authToken = null;
+                currentUser = {};
+                checkAuth();
+            });
+
+            // API request helper with auth token
+            async function apiRequest(endpoint, options = {}) {
+                let headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                };
+
+                try {
+                    let response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                        ...options,
+                        headers: {
+                            ...headers,
+                            ...(options.headers || {})
+                        }
+                    });
+
+                    if (response.status === 401 || response.status === 403) {
+                        // Token expired or invalid
+                        localStorage.removeItem('userAuthToken');
+                        localStorage.removeItem('currentUser');
+                        authToken = null;
+                        currentUser = {};
+                        checkAuth();
+                        return null;
+                    }
+
+                    return await response.json();
+                } catch (error) {
+                    console.error('API request error:', error);
+                    return { error: 'An error occurred while connecting to the server' };
+                }
+            }
+
+            // Load user locker information
+            async function loadLockerInfo() {
+                let lockerInfo = await apiRequest('/user/locker');
+
+                if (!lockerInfo) return;
+
+                if (lockerInfo.has_locker) {
+                    // Show locker info
+                    document.getElementById('noLockerMessage').classList.add('hidden');
+                    document.getElementById('lockerInfo').classList.remove('hidden');
+
+                    // Update locker details
+                    document.getElementById('lockerNumber').textContent =
+                        `Block ${lockerInfo.locker.block} - Locker #${lockerInfo.locker.number}`;
+
+                    document.getElementById('assignedDate').textContent =
+                        new Date(lockerInfo.assignment.assigned_date).toLocaleDateString();
+
+                    document.getElementById('expiryDate').textContent =
+                        lockerInfo.assignment.expiry_date
+                            ? new Date(lockerInfo.assignment.expiry_date).toLocaleDateString()
+                            : 'No expiration date';
+
+                    // Update activity list
+                    let activityListHtml = lockerInfo.recent_activity.map(activity => {
+                        let icon = '';
+
+                        switch(activity.action) {
+                            case 'unlock':
+                                icon = '<i class="bi bi-unlock action-icon"></i>';
+                                break;
+                            case 'door_opened':
+                                icon = '<i class="bi bi-door-open action-icon"></i>';
+                                break;
+                            case 'door_closed':
+                                icon = '<i class="bi bi-door-closed action-icon"></i>';
+                                break;
+                            case 'remote_unlock':
+                                icon = '<i class="bi bi-phone action-icon"></i>';
+                                break;
+                            default:
+                                icon = '<i class="bi bi-asterisk action-icon"></i>';
+                        }
+
+                        let timestamp = new Date(activity.timestamp).toLocaleString();
+
+                        return `
+                            <li class="list-group-item">
+                                ${icon} ${formatActivityText(activity.action, activity.status)}
+                                <div class="activity-timestamp">${timestamp}</div>
+                            </li>
+                            `;
+                    }).join('');
+
+                    document.getElementById('activityList').innerHTML =
+                        activityListHtml || '<li class="list-group-item">No recent activity</li>';
+                } else {
+                    // Show no locker message
+                    document.getElementById('noLockerMessage').classList.remove('hidden');
+                    document.getElementById('lockerInfo').classList.add('hidden');
+                }
+            }
+
+            // Format activity text
+            function formatActivityText(action, status) {
+                let actions = {
+                    'unlock': 'Locker unlocked',
+                    'door_opened': 'Door opened',
+                    'door_closed': 'Door closed',
+                    'remote_unlock': 'Remote unlock request'
+                };
+
+                let statuses = {
+                    'success': 'successfully',
+                    'failed': 'failed',
+                    'requested': 'requested',
+                    'recorded': ''
+                };
+
+                return `${actions[action] || action} ${statuses[status] || status}`;
+            }
+
+            // Unlock button handler
+            document.getElementById('unlockButton').addEventListener('click', async function() {
+                // Disable button to prevent multiple clicks
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Unlocking...';
+
+                let response = await apiRequest('/user/locker/unlock', {
+                    method: 'POST'
+                });
+
+                // Re-enable button
+                this.disabled = false;
+                this.innerHTML = '<i class="bi bi-unlock"></i> Unlock Locker';
+
+                if (response && response.success) {
+                    // Show success modal
+                    document.getElementById('unlockedLockerInfo').textContent =
+                        `Block ${response.locker.block} - #${response.locker.number}`;
+
+                    let modal = new bootstrap.Modal(document.getElementById('unlockSuccessModal'));
+                    modal.show();
+
+                    // Refresh locker info to update activity
+                    loadLockerInfo();
+                } else {
+                    alert('Failed to unlock locker: ' + (response?.error || 'Unknown error'));
+                }
+            });
+        });
+    </script>
+    </body>
+</html>

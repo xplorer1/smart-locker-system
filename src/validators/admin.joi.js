@@ -3,11 +3,11 @@ let Joi = require("joi");
 
 module.exports = {
 
-    addStudent: async function (req, res, next) {
+    addUser: async function (req, res, next) {
         let schema = Joi.object({
 
             full_name: Joi.string().required(),
-            student_id: Joi.string().required(),
+            user_id: Joi.string().required(),
             rfid_card_id: Joi.string().optional().allow('', null),
 
             pin_code: Joi.string().length(4).required().messages({
@@ -39,10 +39,9 @@ module.exports = {
     assignLocker: async function (req, res, next) {
         let schema = Joi.object({
 
-            student_id: Joi.number().required(),
-            locker_number: Joi.number().required(),
-            assigned_date: Joi.string().required(),
-            expiry_date: Joi.string().required(),
+            user_id: Joi.number().required(),
+            locker_id: Joi.number().required(),
+            expiry_date: Joi.string().optional().allow('', null),
         });
 
         // schema options

@@ -8,11 +8,11 @@ module.exports = (sequelize, DataTypes) => {
             primaryKey: true,
         },
 
-        student_id: {
+        user_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
             references: {
-                model: 'student',   // table name
+                model: 'user',   // table name
                 key: 'id'
             }
         },

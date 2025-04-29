@@ -40,6 +40,14 @@ let index = require('./src/routes/index');
 
 app.use('/api', index);
 
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+app.get('/user', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'user.html'));
+});
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
     res.status(404).send({ message: "Requested resource cannot be found at this location.", status: false, });

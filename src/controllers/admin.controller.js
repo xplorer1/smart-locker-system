@@ -1,37 +1,37 @@
 
-let {sequelize, Student, Assignment, Locker, AccessLog, Admin} = require("../models/index");
+let {sequelize, User, Assignment, Locker, AccessLog, Admin} = require("../models/index");
 
 let { Op } = require('sequelize');
 
 module.exports = {
     /**
-     * Add student.
-     * @param {Object} req - The HTTP request object containing student details in req.body.
+     * Add User.
+     * @param {Object} req - The HTTP request object containing User details in req.body.
      * @param {Object} res - The HTTP response object used to send responses.
      */
-    addStudent: async (req, res) => {
-        let { full_name, student_id, rfid_card_id, pin_code } = req.body;
+    addUser: async (req, res) => {
+        let { full_name, user_id, rfid_card_id, pin_code } = req.body;
 
         try {
 
-            let student = await Student.create({
+            let user = await User.create({
                 full_name,
-                student_id,
+                user_id,
                 rfid_card_id: rfid_card_id || null,
                 pin_code: pin_code || null,
             });
 
             res.status(201).json({
-                id: student.id,
+                id: user.id,
                 full_name,
-                student_id,
+                user_id,
                 rfid_card_id,
-                message: 'Student created successfully'
+                message: 'User created successfully'
             });
 
         } catch (err) {
             if (err.name === 'SequelizeUniqueConstraintError') {
-                return res.status(409).json({ message: 'Student ID or RFID already exists' });
+                return res.status(409).json({ message: 'User ID or RFID already exists' });
             }
 
             console.error(err);
@@ -40,17 +40,17 @@ module.exports = {
     },
 
     /**
-     * Retrieves a list of students.
+     * Retrieves a list of users.
      * @param {Object} req - The HTTP request object containing id in req.params.
      * @param {Object} res - The HTTP response object used to send responses.
      */
-    getStudents: async (req, res) => {
+    getUsers: async (req, res) => {
         try {
 
-            let students = await Student.findAll({
+            let users = await User.findAll({
                 order: [['full_name', 'ASC']]
             });
-            return res.status(200).json(students);
+            return res.status(200).json(users);
         } catch (err) {
             console.error(err);
             return res.status(500).json({ message: 'Database error' });
@@ -59,7 +59,7 @@ module.exports = {
 
     /**
      * Retrieves a list of active lockers
-     * @param {Object} req - The HTTP request object containing userId in req.query.
+     * @param {Object} req - The HTTP request object.
      * @param {Object} res - The HTTP response object used to send responses.
      */
     getActiveLockers: async (req, res) => {
@@ -70,8 +70,8 @@ module.exports = {
                     where: { status: 'ACTIVE' },
                     required: false,
                     include: [{
-                        model: Student,
-                        attributes: ['full_name', 'student_id']
+                        model: User,
+                        attributes: ['full_name', 'user_id']
                     }]
                 }],
                 order: [['locker_number', 'ASC']]
@@ -79,7 +79,7 @@ module.exports = {
 
             // Format response to match expected structure
             let formatted_lockers = lockers.map(locker => {
-                let assignments = locker.Assignment || [];
+                let assignments = locker.Assignments || [];
                 let active_assignment = assignments.length > 0 ? assignments[0] : null;
 
                 return {
@@ -87,7 +87,7 @@ module.exports = {
                     locker_number: locker.locker_number,
                     block: locker.block,
                     status: locker.status,
-                    assigned_to: active_assignment ? active_assignment.Student.full_name : null,
+                    assigned_to: active_assignment ? active_assignment.User.full_name : null,
                     assigned_date: active_assignment ? active_assignment.assigned_date : null,
                     expiry_date: active_assignment ? active_assignment.expiry_date : null
                 };
@@ -101,7 +101,7 @@ module.exports = {
     },
 
     assignLocker: async (req, res) => {
-        let { student_id, locker_number, expiry_date, assigned_date } = req.body;
+        let { user_id, locker_id, expiry_date} = req.body;
 
         try {
             // Begin transaction
@@ -111,7 +111,7 @@ module.exports = {
                 // Check if locker is available
                 let locker = await Locker.findOne({
                     where: {
-                        locker_number: locker_number,
+                        id: locker_id,
                         [Op.or]: [
                             { status: 'AVAILABLE' },
                             {
@@ -128,16 +128,16 @@ module.exports = {
                     return res.status(409).json({ message: 'Locker is not available.' });
                 }
 
-                // Check if student exists
-                let student = await Student.findOne({ where: { student_id }, transaction });
-                if (!student) {
+                // Check if User exists
+                let user = await User.findByPk(user_id);
+                if (!user) {
                     await transaction.rollback();
-                    return res.status(404).json({ message: 'Student not found' });
+                    return res.status(404).json({ message: 'User not found' });
                 }
 
                 // Deactivate any existing active assignments for this locker
                 await Assignment.update(
-                    { status: 'expired' },
+                    { status: 'EXPIRED' },
                     {
                         where: {
                             locker_id: locker.id,
@@ -147,10 +147,17 @@ module.exports = {
                     }
                 );
 
+                let assigned_date = new Date();
+                if(!expiry_date) {
+                    let next_year = new Date(assigned_date);
+                    next_year.setFullYear( assigned_date.getFullYear() + 1 );
+                    expiry_date = next_year;
+                }
+
                 // Create new assignment
                 let assignment = await Assignment.create(
                     {
-                        student_id: student.id,
+                        user_id: user.id,
                         locker_id: locker.id,
                         assigned_date: assigned_date,
                         expiry_date: expiry_date
@@ -166,9 +173,8 @@ module.exports = {
 
                 return res.status(201).json({
                     id: assignment.id,
-                    student_id,
-                    locker_number,
-                    expiry_date,
+                    user_id,
+                    expiry_date: assignment.expiry_date,
                     message: 'Locker assigned successfully.'
                 });
             } catch (error) {
@@ -242,8 +248,8 @@ module.exports = {
             let queryOptions = {
                 include: [
                     {
-                        model: Student,
-                        attributes: ['full_name', 'student_id']
+                        model: User,
+                        attributes: ['full_name', 'user_id']
                     },
                     {
                         model: Locker,
@@ -284,8 +290,8 @@ module.exports = {
                 return {
                     id: log.id,
                     timestamp: log.createdAt,
-                    full_name: log.Student ? log.Student.full_name : null,
-                    student_id: log.Student ? log.Student.student_id : null,
+                    full_name: log.User ? log.User.full_name : null,
+                    user_id: log.User ? log.User.user_id : null,
                     locker_number: log.Locker ? log.Locker.locker_number : null,
                     block: log.Locker ? log.Locker.block : null,
                     action: log.action,
@@ -378,7 +384,7 @@ module.exports = {
     getAllAdmins: async (req, res) => {
         try {
             let admins = await Admin.findAll({
-                attributes: ['id', 'username', 'full_name', 'createdAt', 'updatedAt'] // Exclude password
+                attributes: ['id', 'username', 'createdAt', 'updatedAt'] // Exclude password
             });
 
             return res.json(admins);

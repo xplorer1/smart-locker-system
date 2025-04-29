@@ -8,21 +8,21 @@ let sequelize = new Sequelize({
 });
 
 // load each model
-let Student = require('./student.model')(sequelize, DataTypes);
+let User = require('./user.model')(sequelize, DataTypes);
 let Locker = require('./locker.model')(sequelize, DataTypes);
 let Assignment = require('./assignment.model')(sequelize, DataTypes);
 let AccessLog = require('./access_log.model')(sequelize, DataTypes);
 let Admin = require('./admin.model')(sequelize, DataTypes);
 
 // define associations *after* you've created all models:
-Student.hasMany( Assignment, { foreignKey: 'student_id', onDelete: 'CASCADE' });
-Assignment.belongsTo( Student,   { foreignKey: 'student_id' });
+User.hasMany( Assignment, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+Assignment.belongsTo( User,   { foreignKey: 'user_id' });
 
 Locker.hasMany( Assignment, { foreignKey: 'locker_id', onDelete: 'SET NULL' });
 Assignment.belongsTo( Locker,    { foreignKey: 'locker_id' });
 
-Student.hasMany( AccessLog,  { foreignKey: 'student_id', onDelete: 'CASCADE' });
-AccessLog.belongsTo( Student,  { foreignKey: 'student_id' });
+User.hasMany( AccessLog,  { foreignKey: 'user_id', onDelete: 'CASCADE' });
+AccessLog.belongsTo( User,  { foreignKey: 'user_id' });
 
 Locker.hasMany( AccessLog,  { foreignKey: 'locker_id', onDelete: 'CASCADE' });
 AccessLog.belongsTo( Locker,   { foreignKey: 'locker_id' });
@@ -48,4 +48,4 @@ try {
     console.error('Database initialization error:', err);
 }
 
-module.exports = { sequelize, Student, Locker, Assignment, AccessLog, Admin };
+module.exports = { sequelize, User, Locker, Assignment, AccessLog, Admin };

@@ -34,7 +34,7 @@ module.exports = {
     verifyLockerAccess: async function (req, res, next) {
         let schema = Joi.object({
 
-            student_id: Joi.string().required(),
+            user_id: Joi.string().required(),
             pin_code: Joi.number().required(),
         });
 
