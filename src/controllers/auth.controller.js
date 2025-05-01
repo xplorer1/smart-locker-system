@@ -1,7 +1,7 @@
 
-let Models = require('../models/index');
+let Models = require('../models/index.model');
 let jwt = require("jsonwebtoken");
-let general_config = require("../config/general_config");
+let general_config = require("../config/general.config");
 
 module.exports = {
     /**
@@ -17,7 +17,7 @@ module.exports = {
             if (!admin) return res.status(401).json({ message: 'Invalid credentials.' });
 
             let match = await admin.validPassword(password);
-            if (!match) return res.status(401).json({ error: 'Invalid credentials.' });
+            if (!match) return res.status(401).json({ message: 'Invalid credentials.' });
 
             let token = jwt.sign({ id: admin.id, username: admin.username }, general_config.secret_key, { expiresIn: '24h' });
 
@@ -33,7 +33,7 @@ module.exports = {
 
         } catch (error) {
             console.error(error);
-            return res.status(500).json({ error: 'Database error' });
+            return res.status(500).json({ message: 'Database error' });
         }
     },
 
@@ -48,7 +48,7 @@ module.exports = {
         try {
             // Find user by RFID or user ID.
             let user = await Models.User.findOne({where: { user_id }});
-            if (!user) return res.status(401).json({authenticated: false, error: 'Invalid user ID'});
+            if (!user) return res.status(401).json({authenticated: false, message: 'Invalid user ID'});
 
             // Verify PIN code
             let match = await user.validPinCode(pin_code.toString());
@@ -57,11 +57,11 @@ module.exports = {
                 // Log failed access attempt
                 // await Models.AccessLog.create({
                 //     user_id: user.id,
-                //     action: 'authentication',
-                //     status: 'failed'
+                //     action: 'AUTHENTICATION',
+                //     status: 'FAILED'
                 // });
 
-                return res.status(401).json({authenticated: false, error: "Invalid PIN." });
+                return res.status(401).json({authenticated: false, message: "Invalid PIN." });
             }
 
             // Find assigned locker
@@ -77,16 +77,16 @@ module.exports = {
 
             if (!assignment) {
                 // Log failed access (no locker assigned)
-                //await Models.AccessLog.create({ user_id: user.id, action: 'authentication', status: 'no_locker' });
-                return res.status(404).json({authenticated: false, error: 'No locker assigned'});
+                //await Models.AccessLog.create({ user_id: user.id, action: 'AUTHENTICATION', status: 'NO_LOCKER' });
+                return res.status(404).json({authenticated: false, message: 'No locker assigned'});
             }
 
             // Log successful access
             await Models.AccessLog.create({
                 user_id: user.id,
                 locker_id: assignment.locker_id,
-                action: 'unlock',
-                status: 'success'
+                action: 'UNLOCK',
+                status: 'SUCCESS'
             });
 
             // Return success with locker information
@@ -104,7 +104,7 @@ module.exports = {
             });
         } catch (err) {
             console.error(err);
-            res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ message: 'Database error' });
         }
     },
 
@@ -112,7 +112,7 @@ module.exports = {
         let { locker_number, status, user_rfid, user_id } = req.body;
 
         if (!locker_number || !status) {
-            return res.status(400).json({ error: 'Locker number and status are required' });
+            return res.status(400).json({ message: 'Locker number and status are required' });
         }
 
         try {
@@ -121,7 +121,7 @@ module.exports = {
                 where: { locker_number }
             });
 
-            if (!locker) return res.status(404).json({ error: 'Locker not found' });
+            if (!locker) return res.status(404).json({ message: 'Locker not found' });
 
             let _user_d = null;
 
@@ -140,14 +140,14 @@ module.exports = {
             await Models.AccessLog.create({
                 locker_id: locker.id,
                 user_id: _user_d,
-                action: status === 'open' ? 'door_opened' : 'door_closed',
-                status: 'recorded'
+                action: status === 'OPEN' ? 'DOOR_OPENED' : 'DOOR_CLOSED',
+                status: 'RECORDED'
             });
 
             return res.json({ success: true });
         } catch (err) {
             console.error(err);
-            return res.status(500).json({ error: 'Database error' });
+            return res.status(500).json({ message: 'Database error' });
         }
     },
     
@@ -155,7 +155,7 @@ module.exports = {
         let { user_id, pin_code } = req.body;
 
         if (!user_id || !pin_code) {
-            return res.status(400).json({ error: 'User ID and PIN are required' });
+            return res.status(400).json({ message: 'User ID and PIN are required' });
         }
 
         try {
@@ -164,7 +164,7 @@ module.exports = {
                 where: { user_id }
             });
 
-            if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+            if (!user) return res.status(401).json({ message: 'Invalid credentials' });
 
             // Verify PIN code
             let match = await user.validPinCode(pin_code);
@@ -173,18 +173,18 @@ module.exports = {
                 // Log failed login attempt
                 await Models.AccessLog.create({
                     user_id: user.id,
-                    action: 'web_login',
-                    status: 'failed'
+                    action: 'WEB_LOGIN',
+                    status: 'FAILED'
                 });
 
-                return res.status(401).json({ error: 'Invalid credentials' });
+                return res.status(401).json({ message: 'Invalid credentials' });
             }
 
             // Log successful login
             // await Models.AccessLog.create({
             //     user_id: user.id,
-            //     action: 'web_login',
-            //     status: 'success'
+            //     action: 'WEB_LOGIN',
+            //     status: 'SUCCESS'
             // });
 
             // Generate JWT token for user
@@ -209,7 +209,7 @@ module.exports = {
             });
         } catch (err) {
             console.error(err);
-            res.status(500).json({ error: 'Database error' });
+            res.status(500).json({ message: 'Database error' });
         }
     },
 };

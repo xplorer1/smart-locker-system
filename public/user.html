@@ -349,17 +349,17 @@
             // Format activity text
             function formatActivityText(action, status) {
                 let actions = {
-                    'unlock': 'Locker unlocked',
-                    'door_opened': 'Door opened',
-                    'door_closed': 'Door closed',
-                    'remote_unlock': 'Remote unlock request'
+                    'UNLOCK': 'Locker unlocked',
+                    'DOOR_OPENED': 'Door opened',
+                    'DOOR_CLOSED': 'Door closed',
+                    'REMOTE_UNLOCK': 'Remote unlock request'
                 };
 
                 let statuses = {
-                    'success': 'successfully',
-                    'failed': 'failed',
-                    'requested': 'requested',
-                    'recorded': ''
+                    'SUCCESS': 'successfully',
+                    'FAILED': 'failed',
+                    'REQUESTED': 'requested',
+                    'RECORDED': ''
                 };
 
                 return `${actions[action] || action} ${statuses[status] || status}`;
@@ -372,7 +372,7 @@
                 this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Unlocking...';
 
                 let response = await apiRequest('/user/locker/unlock', {
-                    method: 'POST'
+                    method: 'GET'
                 });
 
                 // Re-enable button

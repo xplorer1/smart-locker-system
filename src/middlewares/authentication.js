@@ -1,5 +1,5 @@
 let jwt = require('jsonwebtoken');
-let general_config = require("../config/general_config");
+let general_config = require("../config/general.config");
 
 let validateJWT = (req, res, next) => {
     let authHeader = req.headers['authorization'];

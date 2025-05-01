@@ -4,7 +4,7 @@ let path = require('path');
 let helmet = require("helmet");
 let logger = require('morgan');
 let cors = require('cors');
-let general_config = require("./src/config/general_config");
+let general_config = require("./src/config/general.config");
 
 let fs = require('fs');
 
@@ -38,7 +38,7 @@ app.use(function(req, res, next) {
     next();
 });
 
-let index = require('./src/routes/index');
+let index = require('./src/routes/index.route');
 
 app.use('/api', index);
 

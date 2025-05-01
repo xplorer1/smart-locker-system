@@ -1,5 +1,8 @@
-let Models = require('../models/index');
+let Models = require('../models/index.model');
 let { Op } = require('sequelize');
+let axios   = require('axios');
+let general_config = require('../config/general.config');
+let locker_util = require('../utils/locker.util');
 
 module.exports = {
     getUserLockerInfo: async (req, res) => {
@@ -61,56 +64,48 @@ module.exports = {
         }
     },
 
-    unlockLocker: async (req, res) => {
-        // Get User ID from JWT token
-        let _user_id = req.user.id;
+    unlockLockerID: async (req, res) => {
+        let {mode, rfid_code, bio_code} = req.body;
+        let _user_id;
+
+        switch (mode) {
+            case "rfid":
+                let rfid_user = await Models.User.findOne({where: {rfid_card_id: rfid_code} });
+                if(!rfid_user) return res.status(404).json({ message: "Invalid RFID code" });
+
+                _user_id = rfid_user.id;
+                break;
+
+            case "bio":
+                let bio_user = await Models.User.findOne({where: {bio_code: bio_code}});
+                if(!bio_user) return res.status(404).json({ message: "Invalid Bio code" });
+
+                _user_id = bio_user.id;
+                break;
+
+            default:
+                return res.status(400).json({ message: "Unknown User ID" });
+        }
 
         try {
-            // Find active locker assignment
-            let assignment = await Models.Assignment.findOne({
-                where: {
-                    user_id: _user_id,
-                    status: 'ACTIVE'
-                },
-                include: [{
-                    model: Models.Locker
-                }]
-            });
+            let unlock_response = await locker_util.unlockLocker(_user_id);
+            return res.status(unlock_response.status).json(unlock_response);
 
-            if (!assignment) {
-                return res.status(404).json({ error: 'No locker assigned to you' });
-            }
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: 'Unable to unlock locker' });
+        }
+    },
 
-            // Log unlock request
-            await Models.AccessLog.create({
-                user_id: _user_id,
-                locker_id: assignment.locker_id,
-                action: 'remote_unlock',
-                status: 'requested'
-            });
+    unlockLockerWeb: async (req, res) => {
+        let _user_id = req.user.id;
+        try {
+            let unlock_response = await locker_util.unlockLocker(_user_id);
+            return res.status(unlock_response.status).json(unlock_response);
 
-            // In a real implementation, you would send a command to the Master Control Unit
-            // to unlock the specific locker. For this demo, we'll simulate a successful unlock.
-
-            // Record the unlock event
-            await Models.AccessLog.create({
-                user_id: _user_id,
-                locker_id: assignment.locker_id,
-                action: 'unlock',
-                status: 'success'
-            });
-
-            return res.json({
-                success: true,
-                message: 'Unlock command sent to locker',
-                locker: {
-                    number: assignment.Locker.locker_number,
-                    block: assignment.Locker.block
-                }
-            });
-        } catch (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Failed to unlock locker' });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: 'Unable to unlock locker' });
         }
     }
 }

@@ -1,5 +1,5 @@
 
-let {sequelize, User, Assignment, Locker, AccessLog, Admin} = require("../models/index");
+let {sequelize, User, Assignment, Locker, AccessLog, Admin} = require("../models/index.model");
 
 let { Op } = require('sequelize');
 
