@@ -3,6 +3,7 @@ let { Op } = require('sequelize');
 let axios   = require('axios');
 let general_config = require('../config/general.config');
 let locker_util = require('../utils/locker.util');
+const {sendToClient} = require("../../index");
 
 module.exports = {
     getUserLockerInfo: async (req, res) => {
@@ -101,11 +102,38 @@ module.exports = {
         let _user_id = req.user.id;
         try {
             let unlock_response = await locker_util.unlockLocker(_user_id);
-            return res.status(unlock_response.status).json(unlock_response);
+            // return res.status(unlock_response.status).json(unlock_response);
 
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ message: 'Unable to unlock locker' });
+            // In a real implementation, you would send a command to the Master Control Unit
+            // to unlock the specific locker. For this demo, we'll simulate a successful unlock.
+
+            // Record the unlock event
+            await Models.AccessLog.create({
+                user_id: _user_id,
+                locker_id: assignment.locker_id,
+                action: 'unlock',
+                status: 'success'
+            });
+
+            const message = {
+                type: "cmd",
+                body: {
+                    action: "open",
+                    pin: 2
+                }
+            };
+            sendToClient("MASTER", message);
+            return res.json({
+                success: true,
+                message: 'Unlock command sent to locker',
+                locker: {
+                    number: assignment.Locker.locker_number,
+                    block: assignment.Locker.block
+                }
+            });
+        } catch (err) {
+            console.error(err);
+            return res.status(500).json({ error: 'Failed to unlock locker' });
         }
     }
 }
