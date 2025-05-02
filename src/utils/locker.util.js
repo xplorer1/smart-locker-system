@@ -1,6 +1,7 @@
 const Models = require("../models/index.model");
-const axios = require("axios");
-const general_config = require("../config/general.config");
+// const axios = require("axios");
+// const general_config = require("../config/general.config");
+const {sendToClient} = require("./webSocket")
 
 module.exports = {
     unlockLocker: async function(user_id) {
@@ -30,14 +31,15 @@ module.exports = {
 
             console.log(`Sending unlock command to LCU for locker ${assignment.Locker.block}-${assignment.Locker.locker_number}`);
 
-            // Send HTTP request to MCU
-            let response = await axios.post(`${general_config.lcu_base_url}/command`, {
-                command: 'unlock',
-                locker_number: assignment.Locker.locker_number,
-                block: assignment.Locker.block
-            });
+            const message = {
+                type: "cmd",
+                body: {
+                    action: "open",
+                    pin: assignment.Locker.locker_number,
+                }
+            };
 
-            console.log("LCU response: ", response);
+            sendToClient("MASTER", message);
 
             // Record the unlock event
             await Models.AccessLog.create({

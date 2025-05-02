@@ -103,52 +103,22 @@ module.exports = {
         let _user_id = req.user.id;
         try {
 
-            // Find active locker assignment
-            let assignment = await Models.Assignment.findOne({
-                where: {
-                    user_id: _user_id,
-                    status: 'ACTIVE'
-                },
-                include: [{
-                    model: Models.Locker
-                }]
-            });
-
-            if (!assignment) {
-                return { status: 404, message: 'No locker assigned to you.' };
+            let unlock_response = await locker_util.unlockLocker(_user_id);
+           
+            if (unlock_response.status !== 200) {
+                return res.status(unlock_response.status).json({
+                    success: false,
+                    message: unlock_response.message
+                });
             }
 
-            // return res.status(unlock_response.status).json(unlock_response);
-
-            // In a real implementation, you would send a command to the Master Control Unit
-            // to unlock the specific locker. For this demo, we'll simulate a successful unlock.
-
-            const message = {
-                type: "cmd",
-                body: {
-                    action: "open",
-                    pin: assignment.Locker.locker_number,
-                }
-            };
-
-            sendToClient("MASTER", message);
-
-            // Record the unlock event
-            await Models.AccessLog.create({
-                user_id: _user_id,
-                locker_id: assignment.locker_id,
-                action: 'unlock',
-                status: 'success'
-            });
-
+            // Send unlock command to the locker
             return res.json({
                 success: true,
                 message: 'Unlock command sent to locker',
-                locker: {
-                    number: assignment.Locker.locker_number,
-                    block: assignment.Locker.block
-                }
+                locker: unlock_response
             });
+    
         } catch (err) {
             console.error(err);
             return res.status(500).json({ error: 'Failed to unlock locker' });
