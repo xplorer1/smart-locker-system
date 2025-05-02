@@ -1,9 +1,10 @@
 let Models = require('../models/index.model');
 let { Op } = require('sequelize');
-let axios   = require('axios');
+let axios = require('axios');
 let general_config = require('../config/general.config');
 let locker_util = require('../utils/locker.util');
-const {sendToClient} = require("../../index");
+
+const {sendToClient} = require("../utils/webSocket")
 
 module.exports = {
     getUserLockerInfo: async (req, res) => {
@@ -66,20 +67,20 @@ module.exports = {
     },
 
     unlockLockerID: async (req, res) => {
-        let {mode, rfid_code, bio_code} = req.body;
+        let { mode, rfid_code, bio_code } = req.body;
         let _user_id;
 
         switch (mode) {
             case "rfid":
-                let rfid_user = await Models.User.findOne({where: {rfid_card_id: rfid_code} });
-                if(!rfid_user) return res.status(404).json({ message: "Invalid RFID code" });
+                let rfid_user = await Models.User.findOne({ where: { rfid_card_id: rfid_code } });
+                if (!rfid_user) return res.status(404).json({ message: "Invalid RFID code" });
 
                 _user_id = rfid_user.id;
                 break;
 
             case "bio":
-                let bio_user = await Models.User.findOne({where: {bio_code: bio_code}});
-                if(!bio_user) return res.status(404).json({ message: "Invalid Bio code" });
+                let bio_user = await Models.User.findOne({ where: { bio_code: bio_code } });
+                if (!bio_user) return res.status(404).json({ message: "Invalid Bio code" });
 
                 _user_id = bio_user.id;
                 break;
@@ -101,11 +102,36 @@ module.exports = {
     unlockLockerWeb: async (req, res) => {
         let _user_id = req.user.id;
         try {
-            let unlock_response = await locker_util.unlockLocker(_user_id);
+
+            // Find active locker assignment
+            let assignment = await Models.Assignment.findOne({
+                where: {
+                    user_id: _user_id,
+                    status: 'ACTIVE'
+                },
+                include: [{
+                    model: Models.Locker
+                }]
+            });
+
+            if (!assignment) {
+                return { status: 404, message: 'No locker assigned to you.' };
+            }
+
             // return res.status(unlock_response.status).json(unlock_response);
 
             // In a real implementation, you would send a command to the Master Control Unit
             // to unlock the specific locker. For this demo, we'll simulate a successful unlock.
+
+            const message = {
+                type: "cmd",
+                body: {
+                    action: "open",
+                    pin: assignment.Locker.locker_number,
+                }
+            };
+
+            sendToClient("MASTER", message);
 
             // Record the unlock event
             await Models.AccessLog.create({
@@ -115,14 +141,6 @@ module.exports = {
                 status: 'success'
             });
 
-            const message = {
-                type: "cmd",
-                body: {
-                    action: "open",
-                    pin: 2
-                }
-            };
-            sendToClient("MASTER", message);
             return res.json({
                 success: true,
                 message: 'Unlock command sent to locker',
