@@ -23,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
         rfid_card_id: {
             type: DataTypes.STRING,
             unique: true,
-            allowNull: false,
+            allowNull: true,
         },
 
         pin_code: {
